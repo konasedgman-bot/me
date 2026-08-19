@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+enum Platform {
+  YOUTUBE
+  TIKTOK
+}
+
+enum ProjectStatus {
+  DRAFT
+  QUEUED
+  GENERATING
+  READY
+  FAILED
+}
+
+enum PostStatus {
+  PENDING
+  POSTING
+  POSTED
+  FAILED
+  SKIPPED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  timezone     String   @default("UTC")
+  createdAt    DateTime @default(now())
+
+  socialAccounts SocialAccount[]
+  projects       VideoProject[]
+  scheduleSlots  ScheduleSlot[]
+  scheduledPosts ScheduledPost[]
+}
+
+model SocialAccount {
+  id           String   @id @default(cuid())
+  userId       String
+  platform     Platform
+  externalId   String
+  displayName  String
+  accessToken  String
+  refreshToken String?
+  tokenExpiry  DateTime?
+  connectedAt  DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@unique([userId, platform, externalId])
+}
+
+model VideoProject {
+  id           String        @id @default(cuid())
+  userId       String
+  prompt       String
+  caption      String        @default("")
+  hashtags     String        @default("")
+  status       ProjectStatus @default(DRAFT)
+  videoUrl     String?
+  videoData    Bytes?
+  videoMime    String?
+  thumbnailUrl String?
+  durationSec  Int?
+  provider     String        @default("mock")
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+}
+
+model ScheduleSlot {
+  id        String   @id @default(cuid())
+  userId    String
+  hour      Int
+  minute    Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@unique([userId, hour, minute])
+}
+
+model ScheduledPost {
+  id              String     @id @default(cuid())
+  userId          String
+  projectId       String
+  socialAccountId String
+  scheduleSlotId  String?
+  slotDate        String?
+  scheduledAt     DateTime
+  status          PostStatus @default(PENDING)
+  platformPostId  String?
+  errorMessage    String?
+  postedAt        DateTime?
+  createdAt       DateTime   @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project       VideoProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  scheduleSlot  ScheduleSlot? @relation(fields: [scheduleSlotId], references: [id], onDelete: SetNull)
+
+  @@unique([scheduleSlotId, slotDate, socialAccountId])
+}
