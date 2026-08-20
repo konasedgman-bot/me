@@ -76,9 +76,9 @@ export const mockProvider: VideoProvider = {
       await fs.writeFile(framePath, buildGradientPpm(hue));
 
       await new Promise<void>((resolve, reject) => {
-        ffmpeg()
+        const command = ffmpeg()
           .input(framePath)
-          .inputOptions(["-loop", "1"])
+          .inputOptions(["-loop", "1", "-framerate", "15"])
           .videoFilters([`hue=h='360*t/${DURATION_SEC}':s=1.15`])
           .outputOptions([
             "-t",
@@ -94,9 +94,22 @@ export const mockProvider: VideoProvider = {
             "-movflags",
             "+faststart",
           ])
-          .output(outPath)
-          .on("end", () => resolve())
-          .on("error", (err) => reject(err))
+          .output(outPath);
+
+        const timeout = setTimeout(() => {
+          command.kill("SIGKILL");
+          reject(new Error("ffmpeg timed out after 25s"));
+        }, 25_000);
+
+        command
+          .on("end", () => {
+            clearTimeout(timeout);
+            resolve();
+          })
+          .on("error", (err) => {
+            clearTimeout(timeout);
+            reject(err);
+          })
           .run();
       });
 
