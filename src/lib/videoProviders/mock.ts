@@ -8,9 +8,9 @@ import type { GeneratedVideo, VideoProvider } from "./types";
 
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
 
-const DURATION_SEC = 6;
-const WIDTH = 720;
-const HEIGHT = 1280;
+const DURATION_SEC = 4;
+const WIDTH = 480;
+const HEIGHT = 854;
 
 function seedFromPrompt(prompt: string) {
   return crypto.createHash("sha256").update(prompt).digest().readUInt32BE(0);
@@ -84,9 +84,11 @@ export const mockProvider: VideoProvider = {
             "-t",
             String(DURATION_SEC),
             "-r",
-            "24",
+            "15",
             "-c:v",
             "libx264",
+            "-preset",
+            "ultrafast",
             "-pix_fmt",
             "yuv420p",
             "-movflags",
