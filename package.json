@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate && node node_modules/ffmpeg-static/install.js",
+    "postinstall": "prisma generate && rm -f node_modules/ffmpeg-static/ffmpeg && node node_modules/ffmpeg-static/install.js",
     "db:push": "prisma db push",
     "cron": "node scripts/run-cron.mjs"
   },
